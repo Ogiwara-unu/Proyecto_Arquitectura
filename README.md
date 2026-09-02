@@ -6,7 +6,16 @@ Sitio web construido con **Nuxt 4** que permite navegar el dataset
 [Global Volcanic Eruptions](https://www.kaggle.com/datasets) (876 registros de
 erupciones volcánicas históricas), asignado al carné **504550757**.
 
-**URL del proyecto publicado en Netlify:** _(completar con la URL final, por ejemplo `https://nombre-del-sitio.netlify.app`)_
+**URL del proyecto publicado en Netlify:** https://proyectoarquitecturaev.netlify.app/
+
+## Diseño
+
+Tema oscuro editorial (estilo informe de datos), con tokens en `:root` sobre
+CSS plano (sin frameworks de UI): fondo `#14100d`, superficies `#1c1712`/`#241d17`,
+acento terracota (`#e0672e`) y tipografía Inter (peso 800/900 para titulares y
+cifras, 400–600 para UI/tablas). El índice VEI tiene su propia paleta
+(`--vei-low/mid/high/extreme`) reutilizada de forma consistente en badges, mapa
+y leyenda.
 
 ## Esquema de organización
 
@@ -18,9 +27,18 @@ conjunto de datos:
 
 Además incluye:
 
+- **Hero + estadísticas**: cifras destacadas (erupciones totales, víctimas
+  totales, mayor explosividad, países con actividad) calculadas en vivo desde
+  el dataset.
+- **Mapa interactivo** (Leaflet + tiles oscuros de CARTO): un marcador por
+  erupción, coloreado según el VEI y con tamaño proporcional a VEI/víctimas,
+  con leyenda propia. Reacciona a los filtros activos.
+- **Filtros** por país, tipo de volcán, índice VEI y "solo con víctimas",
+  sincronizados con la URL.
 - **Búsqueda** global (por nombre de volcán, ubicación, país o tipo), disponible
   en el inicio y dentro de cada categoría.
-- **Paginación** (12 registros por página) en todas las listas de resultados.
+- **Tabla editorial** ordenable (por año, VEI o víctimas) con badges de VEI y
+  cifras en tipografía tabular, más **paginación** (12 registros por página).
 - **Vista de detalle** por erupción, con ficha técnica (fecha, VEI, elevación,
   coordenadas con enlace a mapa), impacto humano/material cuando existe, y
   navegación al registro anterior/siguiente.
@@ -35,13 +53,16 @@ app/
   app.vue              # layout raíz (header, footer, NuxtPage)
   composables/
     useDataset.js       # acceso a datos: filtrar, paginar, categorías, slugs
+  utils/
+    vei.js               # bucket de color VEI (low/mid/high/extreme), fuente única
   components/
-    NavTree.vue          # árbol de navegación (por país / por tipo)
-    SearchBar.vue         # buscador
-    Pagination.vue        # paginación
-    RecordCard.vue         # tarjeta de resultado
+    NavTree.vue           # árbol de navegación (por país / por tipo)
+    SearchBar.vue          # buscador
+    Pagination.vue         # paginación
+    EruptionTable.vue       # tabla editorial ordenable de erupciones
+    VolcanoMap.vue           # mapa Leaflet (ClientOnly) con leyenda VEI propia
   pages/
-    index.vue                    # inicio: búsqueda + listado general
+    index.vue                    # inicio: hero, stats, filtros, mapa y tabla
     categoria/index.vue           # hub de categorías (país / tipo)
     categoria/pais/[pais].vue      # listado por país
     categoria/tipo/[tipo].vue      # listado por tipo de volcán
@@ -71,8 +92,13 @@ Este repo incluye `netlify.toml` con la configuración de build:
 
 ```
 build command: npm run generate
-publish dir:   .output/public
+publish dir:   dist
+NODE_VERSION:  24
 ```
+
+> Nuxt requiere Node `^22.19.0 || ^24.11.0 || >=26.0.0`; sin fijar
+> `NODE_VERSION` el build de Netlify falla con exit code 2 antes de generar
+> nada.
 
 Opciones para publicar:
 
