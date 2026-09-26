@@ -1,5 +1,5 @@
 <script setup>
-const { countries, types } = useDataset()
+const { countries, types } = await useDataset()
 </script>
 
 <template>

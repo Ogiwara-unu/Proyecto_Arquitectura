@@ -1,7 +1,7 @@
 <script setup>
 const route = useRoute()
 const router = useRouter()
-const { countries, types, getCountryBySlug, filterRecords, paginate } = useDataset()
+const { countries, types, getCountryBySlug, filterRecords, paginate } = await useDataset()
 
 const slug = computed(() => String(route.params.pais))
 const country = computed(() => getCountryBySlug(slug.value))

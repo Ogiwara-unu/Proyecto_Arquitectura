@@ -1,6 +1,12 @@
+# El contenido vive en Comet CMS (local), que no es accesible desde los
+# servidores de Netlify. Por eso el sitio se genera localmente y se sube con:
+#   npm run generate
+#   netlify deploy --prod --dir .output/public --no-build
+# `ignore` evita que un push a GitHub dispare un build que fallaría.
 [build]
   command = "npm run generate"
   publish = "dist"
+  ignore = "exit 0"
 
 [build.environment]
   NODE_VERSION = "24"

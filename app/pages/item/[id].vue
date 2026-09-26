@@ -1,6 +1,6 @@
 <script setup>
 const route = useRoute()
-const { getById, neighbors } = useDataset()
+const { getById, neighbors } = await useDataset()
 
 const id = computed(() => route.params.id)
 const record = computed(() => getById(id.value))

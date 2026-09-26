@@ -1,5 +1,5 @@
 <script setup>
-const { records, countries, types, filterRecords, paginate } = useDataset()
+const { records, countries, types, filterRecords, paginate } = await useDataset()
 const route = useRoute()
 const router = useRouter()
 

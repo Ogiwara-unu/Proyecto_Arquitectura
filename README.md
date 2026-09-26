@@ -1,12 +1,66 @@
 # Erupciones Volcánicas Globales
 
-Proyecto 1 — Arquitectura de Información — Universidad Nacional.
+Proyecto 1 / Tarea 3 (CMS headless) — Arquitectura de Información — Universidad Nacional.
+
+**Estudiante:** Randall Alvarez Chevez — cédula **504550757**
 
 Sitio web construido con **Nuxt 4** que permite navegar el dataset
 [Global Volcanic Eruptions](https://www.kaggle.com/datasets) (876 registros de
-erupciones volcánicas históricas), asignado al carné **504550757**.
+erupciones volcánicas históricas). Desde la Tarea 3 todo el contenido se
+administra y se lee desde **Comet CMS** (headless).
 
 **URL del proyecto publicado en Netlify:** https://proyectoarquitecturaev.netlify.app/
+
+## Tarea 3 — Comet CMS
+
+### Modelo de contenido (workspace `volcanes`)
+
+| Tipo de contenido | Campos (tipo)                                                                                                                                                                                                  | Relaciones (llaves foráneas)                          |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `paises`          | `title` (texto), `slug`                                                                                                                                                                                        | —                                                     |
+| `tipos-volcan`    | `title` (texto), `slug`, `descripcion` (texto largo)                                                                                                                                                           | —                                                     |
+| `volcanes`        | `title` (texto), `slug`, `ubicacion` (texto), `latitud`, `longitud`, `elevacion` (numérico), `imagen` (media/imagen)                                                                                           | `pais` → `paises`, `tipo` → `tipos-volcan`            |
+| `erupciones`      | `title` (texto), `slug`, `numero`, `anio`, `mes`, `dia`, `vei`, `muertes`, `desaparecidos`, `heridos`, `danos_millones`, `casas_destruidas` (numérico), `fecha`, `agente` (texto)                               | `volcan` → `volcanes`                                 |
+
+Registros cargados: 50 países, 20 tipos de volcán, 274 volcanes y 876
+erupciones, todos enlazados mediante campos `relation` del CMS.
+
+### Cómo lee Nuxt el contenido
+
+- `server/utils/comet.js` consulta la API pública de Comet
+  (`/api/v1/workspaces/{workspace}/content/{coleccion}`), usando
+  `?include=volcan` para expandir la relación y resolviendo país/tipo de cada
+  volcán; devuelve los registros ya normalizados.
+- `server/routes/dataset.json.get.js` expone ese resultado; al generar el sitio
+  se prerenderiza como `/dataset.json` y el navegador lo descarga una sola vez.
+- `app/composables/useDataset.js` (`await useDataset()`) carga los datos desde
+  ahí; las páginas filtran, paginan y agrupan igual que antes.
+- `nuxt.config.ts` consulta el CMS para saber qué rutas (países, tipos,
+  erupciones) prerenderizar.
+
+Variables de entorno (ver `.env.example`): `COMET_URL` (por defecto
+`http://127.0.0.1:8000`) y `COMET_WORKSPACE` (por defecto `volcanes`).
+
+### Cargar los datos en el CMS
+
+`scripts/seed-comet.mjs` crea los tipos de contenido y sube los registros de
+`data/dataset.json` con sus relaciones (es idempotente):
+
+```bash
+COMET_URL=http://127.0.0.1:8000 COMET_USER=admin COMET_PASS=... node scripts/seed-comet.mjs
+```
+
+### Correr Comet CMS localmente
+
+Comet v1.0.2 se instaló desde el release oficial de
+[GetCometCMS/CometCMS](https://github.com/GetCometCMS/CometCMS) y corre con el
+servidor embebido de PHP 8.2+:
+
+```bash
+cd comet-cms
+php -S 127.0.0.1:8000 router.php
+# admin: http://127.0.0.1:8000/admin
+```
 
 ## Diseño
 
@@ -46,13 +100,16 @@ Además incluye:
 ## Estructura del proyecto
 
 ```
-nuxt.config.ts        # config de Nuxt + prerender de todas las rutas dinámicas
-data/dataset.json      # dataset limpio, generado desde volcano-events.csv
+nuxt.config.ts        # config de Nuxt + prerender de las rutas publicadas en Comet
+server/utils/comet.js  # cliente de la API pública de Comet CMS
+server/routes/dataset.json.get.js # dataset normalizado desde Comet
+data/dataset.json      # dataset limpio (fuente para cargar Comet)
+scripts/seed-comet.mjs # crea tipos de contenido y carga los registros en Comet
 scripts/build-data.mjs # script que convierte el CSV original a data/dataset.json
 app/
   app.vue              # layout raíz (header, footer, NuxtPage)
   composables/
-    useDataset.js       # acceso a datos: filtrar, paginar, categorías, slugs
+    useDataset.js       # acceso a datos (desde Comet): filtrar, paginar, categorías
   utils/
     vei.js               # bucket de color VEI (low/mid/high/extreme), fuente única
   components/
@@ -100,12 +157,16 @@ NODE_VERSION:  24
 > `NODE_VERSION` el build de Netlify falla con exit code 2 antes de generar
 > nada.
 
-Opciones para publicar:
+Como el contenido se lee desde Comet CMS corriendo localmente (inaccesible
+para los servidores de Netlify), el sitio se genera en la máquina local y se
+sube ya construido con Netlify CLI. `netlify.toml` incluye `ignore = "exit 0"`
+para que un push a GitHub no dispare un build que fallaría.
 
-1. **Conectando el repositorio de Git a Netlify** (recomendado): Netlify
-   detecta automáticamente `netlify.toml` y construye/despliega en cada push.
-2. **Arrastrar y soltar**: ejecutar `npm run generate` localmente y arrastrar
-   la carpeta `.output/public` a [app.netlify.com/drop](https://app.netlify.com/drop).
+```bash
+# con Comet corriendo en http://127.0.0.1:8000
+npm run generate
+netlify deploy --prod --dir .output/public --no-build
+```
 
 ## Dataset
 

@@ -1,6 +1,14 @@
-import dataset from '~~/data/dataset.json'
-
 const PER_PAGE = 12
+
+// En el cliente el dataset (proveniente de Comet CMS) se descarga una sola vez
+// y no se serializa en el payload de cada página.
+let clientDataset = null
+
+function loadDataset() {
+  if (import.meta.server) return $fetch('/dataset.json')
+  clientDataset ??= $fetch('/dataset.json').catch(err => { clientDataset = null; throw err })
+  return clientDataset
+}
 
 export function slugify(text) {
   return String(text)
@@ -22,8 +30,8 @@ function buildFacet(records, field) {
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
-export function useDataset() {
-  const records = dataset
+export async function useDataset() {
+  const records = await loadDataset()
 
   const countries = buildFacet(records, 'country')
   const types = buildFacet(records, 'type')

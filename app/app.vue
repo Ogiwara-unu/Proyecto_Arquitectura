@@ -29,7 +29,7 @@ useHead({
 
     <footer class="site-footer">
       <div class="container">
-        Proyecto 1 · Arquitectura de Información · Universidad Nacional — Dataset: Global Volcanic Eruptions
+        Arquitectura de Información · Universidad Nacional — Dataset: Global Volcanic Eruptions · Contenido servido desde Comet CMS
       </div>
     </footer>
   </div>
